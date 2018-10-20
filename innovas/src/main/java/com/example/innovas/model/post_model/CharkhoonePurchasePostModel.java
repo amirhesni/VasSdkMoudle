@@ -1,4 +1,4 @@
-package com.example.innovas.model;
+package com.example.innovas.model.post_model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -7,25 +7,22 @@ import com.google.gson.annotations.SerializedName;
  * Created by User on 9/9/2018.
  */
 
-public class VerifyPostModel {
+public class CharkhoonePurchasePostModel {
+
     @SerializedName("application")
     @Expose
     private String application;
     @SerializedName("msisdn")
     @Expose
     private String msisdn;
-    @SerializedName("otp_id")
+    @SerializedName("purchase_token")
     @Expose
-    private Integer otpId;
-    @SerializedName("pin")
-    @Expose
-    private String pin;
+    private String purchaseToken;
 
-    public VerifyPostModel(String application, String msisdn, Integer otpId, String pin) {
+    public CharkhoonePurchasePostModel(String application, String msisdn, String purchaseToken) {
         this.application = application;
         this.msisdn = msisdn;
-        this.otpId = otpId;
-        this.pin = pin;
+        this.purchaseToken = purchaseToken;
     }
 
     public String getApplication() {
@@ -44,21 +41,11 @@ public class VerifyPostModel {
         this.msisdn = msisdn;
     }
 
-    public Integer getOtpId() {
-        return otpId;
+    public String getPurchaseToken() {
+        return purchaseToken;
     }
 
-    public void setOtpId(Integer otpId) {
-        this.otpId = otpId;
+    public void setPurchaseToken(String purchaseToken) {
+        this.purchaseToken = purchaseToken;
     }
-
-    public String getPin() {
-        return pin;
-    }
-
-    public void setPin(String pin) {
-        this.pin = pin;
-    }
-
-
 }

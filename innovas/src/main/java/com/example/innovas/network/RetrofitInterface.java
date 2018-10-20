@@ -1,9 +1,11 @@
 package com.example.innovas.network;
 
-import com.example.innovas.model.CharkhoonePurchasePostModel;
-import com.example.innovas.model.OtpPostModel;
-import com.example.innovas.model.VerifyPostModel;
-import com.example.innovas.model.IsUserPostModel;
+import com.example.innovas.model.ResponseOtpRequest;
+import com.example.innovas.model.ResponseSubscribtion;
+import com.example.innovas.model.post_model.CharkhoonePurchasePostModel;
+import com.example.innovas.model.post_model.IsUserPostModel;
+import com.example.innovas.model.post_model.OtpPostModel;
+import com.example.innovas.model.post_model.VerifyPostModel;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -17,18 +19,18 @@ import retrofit2.http.POST;
 
 public interface RetrofitInterface {
     @POST("clients/is-user")
-    Call<ResponseBody> isUser(@Header("Vw-Application-ID") Integer id , @Header("Vw-Checksum") String checksum
-            , @Header("Content-Type") String Content_Type , @Header("Accept") String Accept , @Body IsUserPostModel postModel);
+    Call<ResponseSubscribtion> isUser(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
+            , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body IsUserPostModel postModel);
 
     @POST("clients/pak/otp/request")
-    Call<ResponseBody> PakOtpRequest(@Header("Vw-Application-ID") Integer id , @Header("Vw-Checksum") String checksum
-            , @Header("Content-Type") String Content_Type , @Header("Accept") String Accept , @Body OtpPostModel postModel);
+    Call<ResponseOtpRequest> PakOtpRequest(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
+            , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body OtpPostModel postModel);
 
     @POST("clients/pak/otp/request")
-    Call<ResponseBody> PakVerifyRequest(@Header("Vw-Application-ID") Integer id , @Header("Vw-Checksum") String checksum
-            , @Header("Content-Type") String Content_Type , @Header("Accept") String Accept , @Body VerifyPostModel postModel);
+    Call<ResponseOtpRequest> PakVerifyRequest(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
+            , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body VerifyPostModel postModel);
 
     @POST("clients/pak/otp/request")
-    Call<ResponseBody> CharkhoonePurchase(@Header("Vw-Application-ID") Integer id , @Header("Vw-Checksum") String checksum
-            , @Header("Content-Type") String Content_Type , @Header("Accept") String Accept , @Body CharkhoonePurchasePostModel postModel);
+    Call<ResponseBody> CharkhoonePurchase(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
+            , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body CharkhoonePurchasePostModel postModel);
 }

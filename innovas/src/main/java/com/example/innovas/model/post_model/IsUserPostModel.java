@@ -1,4 +1,4 @@
-package com.example.innovas.model;
+package com.example.innovas.model.post_model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -7,17 +7,22 @@ import com.google.gson.annotations.SerializedName;
  * Created by User on 9/9/2018.
  */
 
-public class OtpPostModel {
+public class IsUserPostModel {
+
     @SerializedName("application")
     @Expose
     private String application;
     @SerializedName("msisdn")
     @Expose
     private String msisdn;
+    @SerializedName("vas_provider")
+    @Expose
+    private String vasProvider;
 
-    public OtpPostModel(String application, String msisdn) {
+    public IsUserPostModel(String application, String msisdn, String vasProvider) {
         this.application = application;
         this.msisdn = msisdn;
+        this.vasProvider = vasProvider;
     }
 
     public String getApplication() {
@@ -35,4 +40,13 @@ public class OtpPostModel {
     public void setMsisdn(String msisdn) {
         this.msisdn = msisdn;
     }
+
+    public String getVasProvider() {
+        return vasProvider;
+    }
+
+    public void setVasProvider(String vasProvider) {
+        this.vasProvider = vasProvider;
+    }
+
 }

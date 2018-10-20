@@ -1,14 +1,21 @@
 package com.example.innovas;
 
-import com.example.innovas.model.CharkhoonePurchasePostModel;
-import com.example.innovas.model.IsUserPostModel;
-import com.example.innovas.model.OtpPostModel;
-import com.example.innovas.model.VerifyPostModel;
+import com.example.innovas.model.ResponseOtpRequest;
+import com.example.innovas.model.ResponseSubscribtion;
+import com.example.innovas.model.post_model.CharkhoonePurchasePostModel;
+import com.example.innovas.model.post_model.IsUserPostModel;
+import com.example.innovas.model.post_model.OtpPostModel;
+import com.example.innovas.model.post_model.VerifyPostModel;
 import com.example.innovas.network.ApiUtils;
 import com.example.innovas.network.RetrofitInterface;
+import com.google.gson.Gson;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -22,13 +29,18 @@ import retrofit2.Response;
 public class VasRequests {
     private static final String CONTENT_TYPE = "application/json";
     private static final String ACCEPT = "application/json";
+
+    private static String CLIENT_SECRET ;
     private static Integer applicationId;
     private static String uuid;
-    private static RetrofitInterface retrofitInterface;
-    private static EventListener listener;
 
-    public interface EventListener {
-        void isSubscribed();
+    private static RetrofitInterface retrofitInterface;
+    private static Gson gson;
+    private static isUserListener listener;
+    private static OtpListener otpListener;
+
+    public interface isUserListener {
+        void isSubscribed(Boolean subscribed);
 
         void unAuthorization();
 
@@ -39,131 +51,185 @@ public class VasRequests {
         void connectionError();
 
         void unExpectedError();
+
     }
 
-    public static void isUser( String msisdn ,String checkSum, EventListener eventListener) {
-        listener = eventListener;
-        IsUserPostModel isUserPostModel = new IsUserPostModel(uuid, formatPhone(msisdn), checkOperator(msisdn));
-        retrofitInterface.isUser(applicationId, checkSum, CONTENT_TYPE, ACCEPT, isUserPostModel).enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-                    listener.isSubscribed();
-                } else if (response.code() == 400) {
-                    listener.badRequest();
-                } else if (response.code() == 500) {
-                    listener.serverError();
-                } else if (response.code() == 401) {
-                    listener.unAuthorization();
-                }
-            }
+    public interface OtpListener {
+        void onSuccess(Integer failureCode, Integer otpId);
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable throwable) {
-                if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
-                    listener.connectionError();
-                else {
-                    listener.unExpectedError();
+        void unAuthorization();
+
+        void serverError();
+
+        void badRequest();
+
+        void connectionError();
+
+        void unExpectedError();
+
+    }
+
+
+    private static String encryptCheckSum(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        password = password + "." + CLIENT_SECRET;
+        MessageDigest crypt = MessageDigest.getInstance("SHA-1");
+        crypt.reset();
+        crypt.update(password.getBytes("UTF-8"));
+
+        return new BigInteger(1, crypt.digest()).toString(16);
+    }
+
+    public static void isUser(String msisdn, isUserListener isUserListener) {
+        listener = isUserListener;
+        IsUserPostModel isUserPostModel = new IsUserPostModel(uuid, formatPhone(msisdn), "pak");
+        try {
+            retrofitInterface.isUser(applicationId, encryptCheckSum(gson.toJson(isUserPostModel)), CONTENT_TYPE, ACCEPT, isUserPostModel).enqueue(new Callback<ResponseSubscribtion>() {
+                @Override
+                public void onResponse(Call<ResponseSubscribtion> call, Response<ResponseSubscribtion> response) {
+                    if (response.isSuccessful()) {
+                        listener.isSubscribed(response.body().getData().getSubscribed());
+                    } else if (response.code() == 400) {
+                        listener.badRequest();
+                    } else if (response.code() == 500) {
+                        listener.serverError();
+                    } else if (response.code() == 401) {
+                        listener.unAuthorization();
+                    }
                 }
-            }
-        });
+
+                @Override
+                public void onFailure(Call<ResponseSubscribtion> call, Throwable throwable) {
+                    if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
+                        listener.connectionError();
+                    else {
+                        listener.unExpectedError();
+                    }
+                }
+            });
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     private static String formatPhone(String msisdn) {
         if (msisdn.startsWith("0")) {
-            return "98"  + msisdn.substring(1);
+            return "98" + msisdn.substring(1);
         }
         return msisdn;
     }
 
-    public static void otpRequest( String msisdn, String checksum, EventListener eventListener) {
-        listener = eventListener;
+    public static void otpRequest(String msisdn, OtpListener listener) {
+        otpListener = listener;
         OtpPostModel otpPostModel = new OtpPostModel(uuid, formatPhone(msisdn));
-        retrofitInterface.PakOtpRequest(2, checksum, CONTENT_TYPE, ACCEPT, otpPostModel).enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-                    listener.isSubscribed();
-                } else if (response.code() == 400) {
-                    listener.badRequest();
-                } else if (response.code() == 500) {
-                    listener.serverError();
-                } else if (response.code() == 401) {
-                    listener.unAuthorization();
+        try {
+            retrofitInterface.PakOtpRequest(applicationId, encryptCheckSum(gson.toJson(otpPostModel)), CONTENT_TYPE, ACCEPT, otpPostModel).enqueue(new Callback<ResponseOtpRequest>() {
+                @Override
+                public void onResponse(Call<ResponseOtpRequest> call, Response<ResponseOtpRequest> response) {
+                    if (response.isSuccessful()) {
+                        otpListener.onSuccess(response.body().getData().getFailureCode() , response.body().getData().getOtpId());
+                    } else if (response.code() == 400) {
+                        otpListener.badRequest();
+                    } else if (response.code() == 500) {
+                        otpListener.serverError();
+                    } else if (response.code() == 401) {
+                        otpListener.unAuthorization();
+                    }else {
+                        otpListener.unExpectedError();
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable throwable) {
-                if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
-                    listener.connectionError();
-                else {
-                    listener.unExpectedError();
+                @Override
+                public void onFailure(Call<ResponseOtpRequest> call, Throwable throwable) {
+                    if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
+                        otpListener.connectionError();
+                    else {
+                        otpListener.unExpectedError();
+                    }
                 }
-            }
-        });
+            });
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void verifyRequest(String msisdn, int otpId, String pin, String checkSum, EventListener eventListener) {
-        listener = eventListener;
+    public static void verifyRequest(String msisdn, int otpId, String pin, OtpListener listener) {
+        otpListener = listener;
         VerifyPostModel verifyPostModel = new VerifyPostModel(uuid, formatPhone(msisdn), otpId, pin);
-        retrofitInterface.PakVerifyRequest(2, checkSum, CONTENT_TYPE, ACCEPT, verifyPostModel).enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-                    listener.isSubscribed();
-                } else if (response.code() == 400) {
-                    listener.badRequest();
-                } else if (response.code() == 500) {
-                    listener.serverError();
-                } else if (response.code() == 401) {
-                    listener.unAuthorization();
+        try {
+            retrofitInterface.PakVerifyRequest(applicationId, encryptCheckSum(gson.toJson(verifyPostModel)), CONTENT_TYPE, ACCEPT, verifyPostModel).enqueue(new Callback<ResponseOtpRequest>() {
+                @Override
+                public void onResponse(Call<ResponseOtpRequest> call, Response<ResponseOtpRequest> response) {
+                    if (response.isSuccessful()) {
+                        otpListener.onSuccess(response.body().getData().getFailureCode() , response.body().getData().getOtpId());
+                    } else if (response.code() == 400) {
+                        otpListener.badRequest();
+                    } else if (response.code() == 500) {
+                        otpListener.serverError();
+                    } else if (response.code() == 401) {
+                        otpListener.unAuthorization();
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable throwable) {
-                if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
-                    listener.connectionError();
-                else {
-                    listener.unExpectedError();
+                @Override
+                public void onFailure(Call<ResponseOtpRequest> call, Throwable throwable) {
+                    if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
+                        otpListener.connectionError();
+                    else {
+                        otpListener.unExpectedError();
+                    }
                 }
-            }
-        });
+            });
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void charkhoonePurchase(String msisdn, String purchaseToken, String checkSum, EventListener eventListener) {
-        listener = eventListener;
+    public static void charkhoonePurchase(String msisdn, String purchaseToken, isUserListener isUserListener) {
+        listener = isUserListener;
         CharkhoonePurchasePostModel postModel = new CharkhoonePurchasePostModel(uuid, formatPhone(msisdn), purchaseToken);
-        retrofitInterface.CharkhoonePurchase(2, checkSum, CONTENT_TYPE, ACCEPT, postModel).enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-                    listener.isSubscribed();
-                } else if (response.code() == 400) {
-                    listener.badRequest();
-                } else if (response.code() == 500) {
-                    listener.serverError();
-                } else if (response.code() == 401) {
-                    listener.unAuthorization();
+        try {
+            retrofitInterface.CharkhoonePurchase(applicationId, encryptCheckSum(gson.toJson(postModel)), CONTENT_TYPE, ACCEPT, postModel).enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    if (response.isSuccessful()) {
+                        listener.isSubscribed(false);
+                    } else if (response.code() == 400) {
+                        listener.badRequest();
+                    } else if (response.code() == 500) {
+                        listener.serverError();
+                    } else if (response.code() == 401) {
+                        listener.unAuthorization();
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable throwable) {
-                if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
-                    listener.connectionError();
-                else {
-                    listener.unExpectedError();
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable throwable) {
+                    if (throwable instanceof ConnectException || throwable instanceof UnknownHostException)
+                        listener.connectionError();
+                    else {
+                        listener.unExpectedError();
+                    }
                 }
-            }
-        });
+            });
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void init(int Application_ID, String uuidApplication) {
+    public static void init(int Application_ID, String uuidApplication , String ClientSecret) {
         retrofitInterface = ApiUtils.GetRetrofit();
+        gson = new Gson();
         applicationId = Application_ID;
         uuid = uuidApplication;
+        CLIENT_SECRET = ClientSecret;
     }
 
     public static String checkOperator(String phone) {
