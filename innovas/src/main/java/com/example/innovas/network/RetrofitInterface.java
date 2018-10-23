@@ -18,19 +18,19 @@ import retrofit2.http.POST;
  */
 
 public interface RetrofitInterface {
-    @POST("clients/is-user")
+    @POST(ApiUtils.API_V1 + "clients/is-user")
     Call<ResponseSubscribtion> isUser(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
             , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body IsUserPostModel postModel);
 
-    @POST("clients/pak/otp/request")
+    @POST(ApiUtils.API_V1 + "clients/pak/otp/request")
     Call<ResponseOtpRequest> PakOtpRequest(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
             , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body OtpPostModel postModel);
 
-    @POST("clients/pak/otp/request")
+    @POST(ApiUtils.API_V1 + "clients/pak/otp/request")
     Call<ResponseOtpRequest> PakVerifyRequest(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
             , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body VerifyPostModel postModel);
 
-    @POST("clients/pak/otp/request")
+    @POST(ApiUtils.API_V1 + "clients/pak/otp/request")
     Call<ResponseBody> CharkhoonePurchase(@Header("Vw-Application-ID") Integer id, @Header("Vw-Checksum") String checksum
             , @Header("Content-Type") String Content_Type, @Header("Accept") String Accept, @Body CharkhoonePurchasePostModel postModel);
 }
